@@ -6,3 +6,4 @@ pub mod block_partitioner;
 pub mod common;
 mod reservation_table;
 pub mod transaction_compressor;
+pub mod streaming_partitioner;
