@@ -11,7 +11,9 @@ use aptos_crypto::{
     ed25519::{Ed25519PublicKey, Ed25519Signature},
     hash::CryptoHash,
     multi_ed25519::{MultiEd25519PublicKey, MultiEd25519Signature},
+    p256::{P256PublicKey, P256Signature},
     traits::Signature,
+    webauthn::{WebAuthnPublicKey, WebAuthnSignature},
     CryptoMaterialError, HashValue, ValidCryptoMaterial, ValidCryptoMaterialStringExt,
 };
 use aptos_crypto_derive::{CryptoHasher, DeserializeKey, SerializeKey};
@@ -140,6 +142,7 @@ impl TransactionAuthenticator {
                 fee_payer_address,
                 fee_payer_signer,
             } => {
+                /// TODO: Need to verify correctly with AccountAuthenticator for WebAuthn
                 // We need to include the fee payer and other signer addresses in the payload data
                 // to sign.
                 let message = RawTransactionWithData::new_fee_payer(
@@ -163,6 +166,7 @@ impl TransactionAuthenticator {
                 secondary_signer_addresses,
                 secondary_signers,
             } => {
+                /// TODO: Need to verify correctly with AccountAuthenticator for WebAuthn
                 let message = RawTransactionWithData::new_multi_agent(
                     raw_txn.clone(),
                     secondary_signer_addresses.clone(),
@@ -352,6 +356,7 @@ impl fmt::Display for TransactionAuthenticator {
 pub enum Scheme {
     Ed25519 = 0,
     MultiEd25519 = 1,
+    WebAuthn = 2,
     // ... add more schemes here
     /// Scheme identifier used to derive addresses (not the authentication key) of objects and
     /// resources accounts. This application serves to domain separate hashes. Without such
@@ -369,6 +374,7 @@ impl fmt::Display for Scheme {
         let display = match self {
             Scheme::Ed25519 => "Ed25519",
             Scheme::MultiEd25519 => "MultiEd25519",
+            Scheme::WebAuthn => "WebAuthn",
             Scheme::DeriveAuid => "DeriveAuid",
             Scheme::DeriveObjectAddressFromObject => "DeriveObjectAddressFromObject",
             Scheme::DeriveObjectAddressFromGuid => "DeriveObjectAddressFromGuid",
@@ -391,7 +397,12 @@ pub enum AccountAuthenticator {
         public_key: MultiEd25519PublicKey,
         signature: MultiEd25519Signature,
     },
-    // ... add more schemes here
+    /// WARNING: I am not implementing Signature (impl Signature) like the other
+    /// signature structs (this is mostly needed for the verify function on webauthn sigs)
+    WebAuthn {
+        public_key: WebAuthnPublicKey,
+        signature: WebAuthnSignature,
+    }, // ... add more schemes here
 }
 
 impl AccountAuthenticator {
@@ -400,6 +411,7 @@ impl AccountAuthenticator {
         match self {
             Self::Ed25519 { .. } => Scheme::Ed25519,
             Self::MultiEd25519 { .. } => Scheme::MultiEd25519,
+            Self::WebAuthn { .. } => Scheme::WebAuthn,
         }
     }
 
@@ -433,6 +445,10 @@ impl AccountAuthenticator {
                 public_key,
                 signature,
             } => signature.verify(message, public_key),
+            Self::WebAuthn {
+                public_key,
+                signature,
+            } => signature.verify(message, public_key),
         }
     }
 
@@ -441,6 +457,10 @@ impl AccountAuthenticator {
         match self {
             Self::Ed25519 { public_key, .. } => public_key.to_bytes().to_vec(),
             Self::MultiEd25519 { public_key, .. } => public_key.to_bytes().to_vec(),
+            Self::WebAuthn { public_key, .. } => match public_key {
+                WebAuthnPublicKey::Ed25519 { public_key } => public_key.to_bytes().to_vec(),
+                WebAuthnPublicKey::P256 { public_key } => public_key.to_bytes().to_vec(),
+            },
         }
     }
 
@@ -449,6 +469,12 @@ impl AccountAuthenticator {
         match self {
             Self::Ed25519 { signature, .. } => signature.to_bytes().to_vec(),
             Self::MultiEd25519 { signature, .. } => signature.to_bytes().to_vec(),
+            Self::WebAuthn { signature, .. } => match signature {
+                WebAuthnSignature::P256Signature { signature, .. } => signature.to_bytes().to_vec(),
+                WebAuthnSignature::Ed25519Signature { signature, .. } => {
+                    signature.to_bytes().to_vec()
+                },
+            },
         }
     }
 
@@ -467,6 +493,7 @@ impl AccountAuthenticator {
         match self {
             Self::Ed25519 { .. } => 1,
             Self::MultiEd25519 { signature, .. } => signature.signatures().len(),
+            Self::WebAuthn { .. } => 1,
         }
     }
 }
