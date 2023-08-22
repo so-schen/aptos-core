@@ -527,21 +527,27 @@ where
     }
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub enum RemoteFetchRequestTargets {
+    ByMetadata(Vec<NodeMetadata>),
+    ByHash(Vec<HashValue>),
+}
+
 /// Represents a request to fetch missing dependencies for `target`, `start_round` represents
 /// the first round we care about in the DAG, `exists_bitmask` is a two dimensional bitmask represents
 /// if a node exist at [start_round + index][validator_index].
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct RemoteFetchRequest {
     epoch: u64,
-    targets: Vec<NodeMetadata>,
+    targets: RemoteFetchRequestTargets,
     exists_bitmask: DagSnapshotBitmask,
 }
 
 impl RemoteFetchRequest {
-    pub fn new(epoch: u64, parents: Vec<NodeMetadata>, exists_bitmask: DagSnapshotBitmask) -> Self {
+    pub fn new(epoch: u64, targets: RemoteFetchRequestTargets, exists_bitmask: DagSnapshotBitmask) -> Self {
         Self {
             epoch,
-            targets: parents,
+            targets,
             exists_bitmask,
         }
     }
@@ -550,7 +556,7 @@ impl RemoteFetchRequest {
         self.epoch
     }
 
-    pub fn targets(&self) -> &[NodeMetadata] {
+    pub fn targets(&self) -> &RemoteFetchRequestTargets {
         &self.targets
     }
 

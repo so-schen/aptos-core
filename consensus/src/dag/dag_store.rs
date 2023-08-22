@@ -135,6 +135,10 @@ impl Dag {
         self.filter_missing(nodes).next().is_none()
     }
 
+    pub fn all_exists_by_round_author<'a>(&self, mut nodes: impl Iterator<Item = &'a (Round, Author)>) -> bool {
+        nodes.all(|(round, author)| self.get_node_ref(*round, author).is_some())
+    }
+
     pub fn filter_missing<'a, 'b>(
         &'b self,
         nodes: impl Iterator<Item = &'a NodeMetadata> + 'b,
