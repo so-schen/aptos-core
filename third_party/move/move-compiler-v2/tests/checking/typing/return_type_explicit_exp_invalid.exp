@@ -6,13 +6,13 @@ error: expected `u64` but found `()`
 5 │         return ()
   │                ^^
 
-error: expected `()` but found `integer`
+error: expected `integer` but found `()`
   ┌─ tests/checking/typing/return_type_explicit_exp_invalid.move:9:26
   │
 9 │         if (true) return 1 else return 0
   │                          ^
 
-error: expected `()` but found `integer`
+error: expected `integer` but found `()`
   ┌─ tests/checking/typing/return_type_explicit_exp_invalid.move:9:40
   │
 9 │         if (true) return 1 else return 0
@@ -30,7 +30,7 @@ error: expected 4 item(s), found 3
 18 │         while (true) return (0, false, R{});
    │                             ^^^^^^^^^^^^^^^
 
-error: expected `bool` but found `integer`
+error: expected `integer` but found `bool`
    ┌─ tests/checking/typing/return_type_explicit_exp_invalid.move:23:31
    │
 23 │         while (false) return (0, false, R{});

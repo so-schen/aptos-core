@@ -1,0 +1,15 @@
+// ---- Model Dump
+module 0x42::m {
+    private fun f1() {
+        Add<u8>(Add<u8>(1, 2), 3)
+    }
+    private fun f2() {
+        Eq<u64>(Mod<u64>(1, 2), 0)
+    }
+    private fun f3(x: u8,y: u32) {
+        {
+          let r: u32 = Shl<u32>(1, x);
+          Add<u32>(y, r)
+        }
+    }
+} // end 0x42::m

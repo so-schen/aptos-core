@@ -6,7 +6,7 @@ error: expected `u64` but found `()`
 5 │         ()
   │         ^^
 
-error: expected `()` but found `integer`
+error: expected `integer` but found `()`
   ┌─ tests/checking/typing/return_type_last_exp_invalid.move:9:9
   │
 9 │         0
@@ -24,7 +24,7 @@ error: expected 4 item(s), found 3
 17 │         (0, false, R{})
    │         ^^^^^^^^^^^^^^^
 
-error: expected `bool` but found `integer`
+error: expected `integer` but found `bool`
    ┌─ tests/checking/typing/return_type_last_exp_invalid.move:21:10
    │
 21 │         (0, false, R{})

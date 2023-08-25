@@ -24,7 +24,7 @@ error: expected `bool` but found `T`
 9 │         if (x) () else ();
   │             ^
 
-error: expected `bool` but found `integer`
+error: expected `integer` but found `bool`
    ┌─ tests/checking/typing/if_condition_invalid.move:10:13
    │
 10 │         if (0) () else ();

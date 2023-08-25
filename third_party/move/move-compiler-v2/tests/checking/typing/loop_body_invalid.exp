@@ -1,6 +1,6 @@
 
 Diagnostics:
-error: expected `()` but found `integer`
+error: expected `integer` but found `()`
   ┌─ tests/checking/typing/loop_body_invalid.move:3:14
   │
 3 │         loop 0
@@ -18,19 +18,19 @@ error: expected `()` but found `address`
 11 │         loop { @0x0 }
    │                ^^^^
 
-error: expected `()` but found `integer`
-   ┌─ tests/checking/typing/loop_body_invalid.move:15:24
+error: expected `integer` but found `()`
+   ┌─ tests/checking/typing/loop_body_invalid.move:15:27
    │
 15 │         loop { let x = 0; x }
-   │                        ^
+   │                           ^
 
-error: expected `()` but found `integer`
+error: expected `integer` but found `()`
    ┌─ tests/checking/typing/loop_body_invalid.move:19:26
    │
 19 │         loop { if (true) 1 else 0 }
    │                          ^
 
-error: expected `()` but found `integer`
+error: expected `integer` but found `()`
    ┌─ tests/checking/typing/loop_body_invalid.move:19:33
    │
 19 │         loop { if (true) 1 else 0 }

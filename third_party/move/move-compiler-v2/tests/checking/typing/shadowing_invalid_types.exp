@@ -1,10 +1,10 @@
 
 Diagnostics:
-error: expected `bool` but found `integer`
-  ┌─ tests/checking/typing/shadowing_invalid_types.move:5:17
+error: expected `integer` but found `bool`
+  ┌─ tests/checking/typing/shadowing_invalid_types.move:8:10
   │
-5 │         let x = 0;
-  │                 ^
+8 │         (x: bool);
+  │          ^
 
 error: expected `u64` but found `bool`
    ┌─ tests/checking/typing/shadowing_invalid_types.move:10:27
@@ -36,11 +36,11 @@ error: expected `u64` but found `address`
 25 │             (x: u64);
    │              ^
 
-error: expected `address` but found `integer`
-   ┌─ tests/checking/typing/shadowing_invalid_types.move:18:17
+error: expected `integer` but found `address`
+   ┌─ tests/checking/typing/shadowing_invalid_types.move:27:10
    │
-18 │         let x = 0;
-   │                 ^
+27 │         (x: address);
+   │          ^
 
 error: expected `u64` but found `bool`
    ┌─ tests/checking/typing/shadowing_invalid_types.move:34:14
@@ -48,8 +48,8 @@ error: expected `u64` but found `bool`
 34 │             (x: u64);
    │              ^
 
-error: expected `bool` but found `integer`
-   ┌─ tests/checking/typing/shadowing_invalid_types.move:31:17
+error: expected `integer` but found `bool`
+   ┌─ tests/checking/typing/shadowing_invalid_types.move:37:10
    │
-31 │         let x = 0;
-   │                 ^
+37 │         (x: bool);
+   │          ^

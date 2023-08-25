@@ -18,7 +18,7 @@ error: expected `u64` but found `bool`
 7 │         (assert!(42, true): ());
   │                      ^^^^
 
-error: expected `bool` but found `integer`
+error: expected `integer` but found `bool`
   ┌─ tests/checking/typing/other_builtins_invalid.move:7:18
   │
 7 │         (assert!(42, true): ());

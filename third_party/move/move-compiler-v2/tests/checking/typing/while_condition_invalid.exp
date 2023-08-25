@@ -24,7 +24,7 @@ error: expected `bool` but found `T`
 9 │         while (x) ();
   │                ^
 
-error: expected `bool` but found `integer`
+error: expected `integer` but found `bool`
    ┌─ tests/checking/typing/while_condition_invalid.move:10:16
    │
 10 │         while (0) ();
