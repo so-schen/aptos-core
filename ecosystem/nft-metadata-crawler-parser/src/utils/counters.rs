@@ -26,7 +26,7 @@ pub static PARSER_SUCCESSES_COUNT: Lazy<IntCounter> = Lazy::new(|| {
 /// Number of times the PubSub subscription stream has been reset
 pub static PUBSUB_STREAM_RESET_COUNT: Lazy<IntCounter> = Lazy::new(|| {
     register_int_counter!(
-        "nft_metadata_crawler_parse_pubsub_stream_reset_count",
+        "nft_metadata_crawler_parser_pubsub_stream_reset_count",
         "Number of times the PubSub subscription stream has been reset",
     )
     .unwrap()
