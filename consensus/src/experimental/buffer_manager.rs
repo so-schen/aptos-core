@@ -137,7 +137,7 @@ impl BufferManager {
     ) -> Self {
         let buffer = Buffer::<BufferItem>::new();
 
-        let rb_backoff_policy = ExponentialBackoff::from_millis(2)
+        let rb_backoff_policy = ExponentialBackoff::from_millis(10)
             .factor(50)
             .max_delay(Duration::from_secs(5));
         Self {

@@ -79,7 +79,7 @@ where
                     (
                         receiver,
                         network_sender
-                            .send_rb_rpc(receiver, message, Duration::from_millis(500))
+                            .send_rb_rpc(receiver, message, Duration::from_millis(1500))
                             .await,
                     )
                 }

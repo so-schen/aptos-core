@@ -642,11 +642,7 @@ impl NetworkTask {
                                 warn!(error = ?e, "aptos channel closed");
                             };
                         },
-                        consensus_msg @ (ConsensusMsg::ProposalMsg(_)
-                        | ConsensusMsg::VoteMsg(_)
-                        | ConsensusMsg::SyncInfo(_)
-                        | ConsensusMsg::EpochRetrievalRequest(_)
-                        | ConsensusMsg::EpochChangeProof(_)) => {
+                        consensus_msg => {
                             if let ConsensusMsg::ProposalMsg(proposal) = &consensus_msg {
                                 observe_block(
                                     proposal.proposal().timestamp_usecs(),
@@ -655,10 +651,10 @@ impl NetworkTask {
                             }
                             Self::push_msg(peer_id, consensus_msg, &self.consensus_messages_tx);
                         },
-                        _ => {
-                            warn!(remote_peer = peer_id, "Unexpected direct send msg");
-                            continue;
-                        },
+                        // _ => {
+                        //     warn!(remote_peer = peer_id, "Unexpected direct send msg");
+                        //     continue;
+                        // },
                     }
                 },
                 Event::RpcRequest(peer_id, msg, protocol, callback) => {
