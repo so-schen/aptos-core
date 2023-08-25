@@ -723,9 +723,13 @@ pub enum EntryFunctionCall {
         amount: u64,
     },
 
-    /// Convenience function to allow a staker to update the commission percentage paid to the operator.
-    /// TODO: fix the typo in function name. commision -> commission
     StakingContractUpdateCommision {
+        operator: AccountAddress,
+        new_commission_percentage: u64,
+    },
+
+    /// Allow staker to update the commission percentage paid to the operator.
+    StakingContractUpdateCommissionPercentage {
         operator: AccountAddress,
         new_commission_percentage: u64,
     },
@@ -837,6 +841,11 @@ pub enum EntryFunctionCall {
     /// Call `unlock_rewards` for many vesting contracts.
     VestingUnlockRewardsMany {
         contract_addresses: Vec<AccountAddress>,
+    },
+
+    VestingUpdateCommissionPercentage {
+        contract_address: AccountAddress,
+        new_commission_percentage: u64,
     },
 
     VestingUpdateOperator {
@@ -1304,6 +1313,10 @@ impl EntryFunctionCall {
                 operator,
                 new_commission_percentage,
             } => staking_contract_update_commision(operator, new_commission_percentage),
+            StakingContractUpdateCommissionPercentage {
+                operator,
+                new_commission_percentage,
+            } => staking_contract_update_commission_percentage(operator, new_commission_percentage),
             StakingContractUpdateVoter {
                 operator,
                 new_voter,
@@ -1370,6 +1383,10 @@ impl EntryFunctionCall {
             VestingUnlockRewardsMany { contract_addresses } => {
                 vesting_unlock_rewards_many(contract_addresses)
             },
+            VestingUpdateCommissionPercentage {
+                contract_address,
+                new_commission_percentage,
+            } => vesting_update_commission_percentage(contract_address, new_commission_percentage),
             VestingUpdateOperator {
                 contract_address,
                 new_operator,
@@ -3370,8 +3387,6 @@ pub fn staking_contract_unlock_stake(operator: AccountAddress, amount: u64) -> T
     ))
 }
 
-/// Convenience function to allow a staker to update the commission percentage paid to the operator.
-/// TODO: fix the typo in function name. commision -> commission
 pub fn staking_contract_update_commision(
     operator: AccountAddress,
     new_commission_percentage: u64,
@@ -3385,6 +3400,28 @@ pub fn staking_contract_update_commision(
             ident_str!("staking_contract").to_owned(),
         ),
         ident_str!("update_commision").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&operator).unwrap(),
+            bcs::to_bytes(&new_commission_percentage).unwrap(),
+        ],
+    ))
+}
+
+/// Allow staker to update the commission percentage paid to the operator.
+pub fn staking_contract_update_commission_percentage(
+    operator: AccountAddress,
+    new_commission_percentage: u64,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("staking_contract").to_owned(),
+        ),
+        ident_str!("update_commission_percentage").to_owned(),
         vec![],
         vec![
             bcs::to_bytes(&operator).unwrap(),
@@ -3787,6 +3824,27 @@ pub fn vesting_unlock_rewards_many(contract_addresses: Vec<AccountAddress>) -> T
         ident_str!("unlock_rewards_many").to_owned(),
         vec![],
         vec![bcs::to_bytes(&contract_addresses).unwrap()],
+    ))
+}
+
+pub fn vesting_update_commission_percentage(
+    contract_address: AccountAddress,
+    new_commission_percentage: u64,
+) -> TransactionPayload {
+    TransactionPayload::EntryFunction(EntryFunction::new(
+        ModuleId::new(
+            AccountAddress::new([
+                0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                0, 0, 0, 1,
+            ]),
+            ident_str!("vesting").to_owned(),
+        ),
+        ident_str!("update_commission_percentage").to_owned(),
+        vec![],
+        vec![
+            bcs::to_bytes(&contract_address).unwrap(),
+            bcs::to_bytes(&new_commission_percentage).unwrap(),
+        ],
     ))
 }
 
@@ -5017,6 +5075,21 @@ mod decoder {
         }
     }
 
+    pub fn staking_contract_update_commission_percentage(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(
+                EntryFunctionCall::StakingContractUpdateCommissionPercentage {
+                    operator: bcs::from_bytes(script.args().get(0)?).ok()?,
+                    new_commission_percentage: bcs::from_bytes(script.args().get(1)?).ok()?,
+                },
+            )
+        } else {
+            None
+        }
+    }
+
     pub fn staking_contract_update_voter(
         payload: &TransactionPayload,
     ) -> Option<EntryFunctionCall> {
@@ -5252,6 +5325,19 @@ mod decoder {
         if let TransactionPayload::EntryFunction(script) = payload {
             Some(EntryFunctionCall::VestingUnlockRewardsMany {
                 contract_addresses: bcs::from_bytes(script.args().get(0)?).ok()?,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn vesting_update_commission_percentage(
+        payload: &TransactionPayload,
+    ) -> Option<EntryFunctionCall> {
+        if let TransactionPayload::EntryFunction(script) = payload {
+            Some(EntryFunctionCall::VestingUpdateCommissionPercentage {
+                contract_address: bcs::from_bytes(script.args().get(0)?).ok()?,
+                new_commission_percentage: bcs::from_bytes(script.args().get(1)?).ok()?,
             })
         } else {
             None
@@ -5681,6 +5767,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
             Box::new(decoder::staking_contract_update_commision),
         );
         map.insert(
+            "staking_contract_update_commission_percentage".to_string(),
+            Box::new(decoder::staking_contract_update_commission_percentage),
+        );
+        map.insert(
             "staking_contract_update_voter".to_string(),
             Box::new(decoder::staking_contract_update_voter),
         );
@@ -5763,6 +5853,10 @@ static SCRIPT_FUNCTION_DECODER_MAP: once_cell::sync::Lazy<EntryFunctionDecoderMa
         map.insert(
             "vesting_unlock_rewards_many".to_string(),
             Box::new(decoder::vesting_unlock_rewards_many),
+        );
+        map.insert(
+            "vesting_update_commission_percentage".to_string(),
+            Box::new(decoder::vesting_update_commission_percentage),
         );
         map.insert(
             "vesting_update_operator".to_string(),
