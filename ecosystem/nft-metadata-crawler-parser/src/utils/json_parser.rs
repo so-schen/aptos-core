@@ -2,7 +2,13 @@
 
 use crate::{
     get_uri_metadata,
-    utils::constants::{MAX_JSON_REQUEST_RETRY_SECONDS, MAX_RETRY_TIME_SECONDS},
+    utils::{
+        constants::{MAX_JSON_REQUEST_RETRY_SECONDS, MAX_RETRY_TIME_SECONDS},
+        counters::{
+            PARSE_JSON_FILE_FOUND_IMAGE_INSTEAD_COUNT, PARSE_JSON_FILE_TOO_LARGE_COUNT,
+            PARSE_JSON_INVOCATION_COUNT,
+        },
+    },
 };
 use anyhow::Context;
 use backoff::{future::retry, ExponentialBackoff};
@@ -22,13 +28,16 @@ impl JSONParser {
         uri: String,
         max_file_size_bytes: u32,
     ) -> anyhow::Result<(Option<String>, Option<String>, Value)> {
+        PARSE_JSON_INVOCATION_COUNT.inc();
         let (mime, size) = get_uri_metadata(uri.clone()).await?;
         if ImageFormat::from_mime_type(mime.clone()).is_some() {
+            PARSE_JSON_FILE_FOUND_IMAGE_INSTEAD_COUNT.inc();
             return Err(anyhow::anyhow!(format!(
                 "JSON parser received image file: {}, skipping",
                 mime
             )));
         } else if size > max_file_size_bytes {
+            PARSE_JSON_FILE_TOO_LARGE_COUNT.inc();
             return Err(anyhow::anyhow!(format!(
                 "JSON parser received file too large: {} bytes, skipping",
                 size

@@ -1,5 +1,8 @@
 // Copyright © Aptos Foundation
 
+use crate::utils::counters::{
+    PARSE_URI_FOUND_ARWEAVE_COUNT, PARSE_URI_INVOCATION_COUNT, SUCCESSFULLY_PARSED_IPFS_URI_COUNT,
+};
 use regex::Regex;
 use url::Url;
 
@@ -9,6 +12,12 @@ impl URIParser {
     /// Attempts to parse IPFS URI to use dedicated gateway.
     /// Returns the original URI if parsing fails.
     pub fn parse(ipfs_prefix: String, uri: String) -> anyhow::Result<String> {
+        PARSE_URI_INVOCATION_COUNT.inc();
+        if uri.contains("arweave.net") {
+            PARSE_URI_FOUND_ARWEAVE_COUNT.inc();
+            return Ok(uri);
+        }
+
         let modified_uri = if uri.starts_with("ipfs://") {
             uri.replace("ipfs://", "https://ipfs.com/ipfs/")
         } else {
@@ -26,6 +35,7 @@ impl URIParser {
             let cid = captures["cid"].to_string();
             let path = captures.name("path").map(|m| m.as_str().to_string());
 
+            SUCCESSFULLY_PARSED_IPFS_URI_COUNT.inc();
             Ok(format!(
                 "{}{}{}",
                 ipfs_prefix,

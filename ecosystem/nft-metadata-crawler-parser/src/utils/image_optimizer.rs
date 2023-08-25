@@ -2,7 +2,10 @@
 
 use crate::{
     get_uri_metadata,
-    utils::constants::{MAX_IMAGE_REQUEST_RETRY_SECONDS, MAX_RETRY_TIME_SECONDS},
+    utils::{
+        constants::{MAX_IMAGE_REQUEST_RETRY_SECONDS, MAX_RETRY_TIME_SECONDS},
+        counters::OPTIMIZE_IMAGE_FILE_TOO_LARGE_COUNT,
+    },
 };
 use anyhow::Context;
 use backoff::{future::retry, ExponentialBackoff};
@@ -27,6 +30,7 @@ impl ImageOptimizer {
     ) -> anyhow::Result<(Vec<u8>, ImageFormat)> {
         let (_, size) = get_uri_metadata(uri.clone()).await?;
         if size > max_file_size_bytes {
+            OPTIMIZE_IMAGE_FILE_TOO_LARGE_COUNT.inc();
             return Err(anyhow::anyhow!(format!(
                 "Image optimizer received file too large: {} bytes, skipping",
                 size
