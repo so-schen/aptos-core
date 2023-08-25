@@ -6,7 +6,7 @@ use crate::{
         nft_metadata_crawler_uris_query::NFTMetadataCrawlerURIsQuery,
     },
     utils::{
-        constants::URI_SKIP_LIST,
+        constants::{MAX_RETRY_TIME_SECONDS, URI_SKIP_LIST},
         counters::{
             DUPLICATE_RAW_ANIMATION_URI_COUNT, DUPLICATE_RAW_IMAGE_URI_COUNT,
             DUPLICATE_TOKEN_URI_COUNT, OPTIMIZE_ANIMATION_INVOCATION_COUNT,
@@ -38,7 +38,7 @@ use google_cloud_pubsub::{
 use image::ImageFormat;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use tokio::task::JoinHandle;
 use tracing::{error, info, warn};
 
@@ -87,7 +87,12 @@ async fn spawn_parser(
             // Sends ack to PubSub only if ack_parsed_uris flag is true
             info!("[NFT Metadata Crawler] More than 5 commas, skipping message");
             let ack = msg.ack_id().to_string();
-            if let Err(e) = subscription.ack(vec![ack.to_string()]).await {
+            if let Err(e) = tokio::time::timeout(
+                Duration::from_secs(MAX_RETRY_TIME_SECONDS),
+                subscription.ack(vec![ack.to_string()]),
+            )
+            .await
+            {
                 error!(
                     pubsub_message = pubsub_message,
                     error = ?e,
@@ -169,7 +174,12 @@ async fn spawn_parser(
                 "[NFT Metadata Crawler] Received worker, acking message"
             );
 
-            if let Err(e) = subscription.ack(vec![ack.to_string()]).await {
+            if let Err(e) = tokio::time::timeout(
+                Duration::from_secs(MAX_RETRY_TIME_SECONDS),
+                subscription.ack(vec![ack.to_string()]),
+            )
+            .await
+            {
                 error!(
                     pubsub_message = pubsub_message,
                     error = ?e,
