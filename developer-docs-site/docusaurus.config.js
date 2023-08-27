@@ -325,6 +325,10 @@ const config = {
       {
         redirects: [
           {
+            to: "/integration/indexing",
+            from: "/indexer/indexer-landing",
+          },
+          {
             to: "/integration/creating-a-signed-transaction",
             from: "/tutorials/your-first-transaction-sdk",
           },
