@@ -218,6 +218,10 @@ pub struct Scheduler {
     // don't pad separately, but instead put them in between two padded members (same cache line).
     // TODO: investigate the trade-off. Re-consider if we change task assignment logic (i.e. make
     // validation/execution preferences stick to the worker threads).
+    
+    // TBI: It seems assume the cache line is 128 bytes, if not, execute_idx and validation_idx
+    // are not in the same cache line.
+
     /// A shared index that tracks the minimum of all transaction indices that require execution.
     /// The threads increment the index and attempt to create an execution task for the corresponding
     /// transaction, if the status of the txn is 'Ready'. This implements a counting-based
