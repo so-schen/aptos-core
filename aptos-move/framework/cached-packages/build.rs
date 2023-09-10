@@ -72,6 +72,11 @@ fn main() {
             "cargo:rerun-if-changed={}",
             prev_dir.join("move-stdlib").join("Move.toml").display()
         );
+        println!(
+            "cargo:rustc-env=MY_BUNDLE_DIR={}",
+            "/home/gftea/repo/aptos-core/aptos-move/framework"
+        );
+
         ReleaseTarget::Head
             .create_release(
                 true,

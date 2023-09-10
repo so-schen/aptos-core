@@ -415,7 +415,7 @@ where
     }
 
     fn work_task_with_scope(
-        &self,
+        &self,  
         executor_arguments: &E::Argument,
         block: &[T],
         last_input_output: &TxnLastInputOutput<T::Key, E::Output, E::Error>,

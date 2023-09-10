@@ -14,9 +14,10 @@ const HEAD_RELEASE_BUNDLE_BYTES: &[u8] = include_bytes!(concat!(env!("OUT_DIR"),
 #[cfg(windows)]
 const HEAD_RELEASE_BUNDLE_BYTES: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "\\head.mrb"));
 
-static HEAD_RELEASE_BUNDLE: Lazy<ReleaseBundle> = Lazy::new(|| {
-    bcs::from_bytes::<ReleaseBundle>(HEAD_RELEASE_BUNDLE_BYTES).expect("bcs succeeds")
-});
+const MY_BUNDLE: &[u8] = include_bytes!(concat!(env!("MY_BUNDLE_DIR"), "/head.mrb"));
+
+static HEAD_RELEASE_BUNDLE: Lazy<ReleaseBundle> =
+    Lazy::new(|| bcs::from_bytes::<ReleaseBundle>(MY_BUNDLE).expect("bcs succeeds"));
 
 /// Returns the release bundle for the current code.
 pub fn head_release_bundle() -> &'static ReleaseBundle {

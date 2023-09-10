@@ -11,6 +11,11 @@ use aptos_types::transaction::{Transaction, TransactionStatus, WriteSetPayload};
 #[test]
 fn no_deletion_in_genesis() {
     let genesis = GENESIS_CHANGE_SET_HEAD.clone();
+    println!(
+        "Release bundle path: {:?}",
+        std::env::var("OUT_DIR").unwrap()
+    );
+
     assert!(!genesis.write_set().iter().any(|(_, op)| op.is_deletion()))
 }
 
