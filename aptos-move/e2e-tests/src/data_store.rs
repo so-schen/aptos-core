@@ -121,7 +121,7 @@ impl TStateView for FakeDataStore {
     }
 
     fn get_usage(&self) -> Result<StateStorageUsage> {
-        let mut usage = StateStorageUsage::new_untracked();
+        let mut usage = StateStorageUsage::new(0, 0);
         for (k, v) in self.state_data.iter() {
             usage.add_item(k.size() + v.size())
         }

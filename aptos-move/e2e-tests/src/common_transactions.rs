@@ -50,6 +50,7 @@ pub fn create_account_txn(
         .payload(aptos_stdlib::aptos_account_create_account(
             *new_account.address(),
         ))
+        .gas_unit_price(100)
         .sequence_number(seq_num)
         .sign()
 }
