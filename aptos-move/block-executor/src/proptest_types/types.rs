@@ -19,8 +19,10 @@ use aptos_types::{
     state_store::{state_storage_usage::StateStorageUsage, state_value::StateValue},
     write_set::{TransactionWrite, WriteOp},
 };
+use aptos_vm_types::resolver::TExecutorView;
+use bytes::Bytes;
 use claims::assert_ok;
-use move_core_types::language_storage::TypeTag;
+use move_core_types::{language_storage::TypeTag, value::MoveTypeLayout};
 use once_cell::sync::OnceCell;
 use proptest::{arbitrary::Arbitrary, collection::vec, prelude::*, proptest, sample::Index};
 use proptest_derive::Arbitrary;
@@ -35,7 +37,6 @@ use std::{
         Arc,
     },
 };
-
 // Should not be possible to overflow or underflow, as each delta is at most 100 in the tests.
 // TODO: extend to delta failures.
 pub(crate) const STORAGE_AGGREGATOR_VALUE: u128 = 100001;
@@ -54,9 +55,9 @@ where
 
     /// Gets the state value for a given state key.
     fn get_state_value(&self, _: &K) -> anyhow::Result<Option<StateValue>> {
-        Ok(Some(StateValue::new_legacy(serialize(
-            &STORAGE_AGGREGATOR_VALUE,
-        ))))
+        Ok(Some(StateValue::new_legacy(
+            serialize(&STORAGE_AGGREGATOR_VALUE).into(),
+        )))
     }
 
     fn id(&self) -> StateViewId {
@@ -140,11 +141,11 @@ pub struct ValueType<V: Into<Vec<u8>> + Debug + Clone + Eq + Arbitrary>(
 impl<V: Into<Vec<u8>> + Debug + Clone + Eq + Send + Sync + Arbitrary> TransactionWrite
     for ValueType<V>
 {
-    fn extract_raw_bytes(&self) -> Option<Vec<u8>> {
+    fn extract_raw_bytes(&self) -> Option<Bytes> {
         if self.1 {
             let mut v = self.0.clone().into();
             v.resize(16, 1);
-            Some(v)
+            Some(v.into())
         } else {
             None
         }
@@ -256,6 +257,7 @@ impl<
     > Transaction for MockTransaction<K, V, E>
 {
     type Event = E;
+    type Identifier = ();
     type Key = K;
     type Value = V;
 }
@@ -510,7 +512,7 @@ where
 
     fn execute_transaction(
         &self,
-        view: &impl TStateView<Key = K>,
+        view: &impl TExecutorView<K, MoveTypeLayout, ()>,
         txn: &Self::Txn,
         txn_idx: TxnIndex,
         _materialize_deltas: bool,
@@ -529,19 +531,26 @@ where
                 let behavior = &incarnation_behaviors[idx % incarnation_behaviors.len()];
 
                 // Reads
-                let mut reads_result = vec![];
+                let mut read_results = vec![];
                 for k in behavior.reads.iter() {
                     // TODO: later test errors as well? (by fixing state_view behavior).
-                    match view.get_state_value_bytes(k) {
-                        Ok(v) => reads_result.push(v),
-                        Err(_) => reads_result.push(None),
+                    // TODO: test aggregator reads.
+                    match k.module_path() {
+                        Some(_) => match view.get_module_bytes(k) {
+                            Ok(v) => read_results.push(v.map(Into::into)),
+                            Err(_) => read_results.push(None),
+                        },
+                        None => match view.get_resource_bytes(k, None) {
+                            Ok(v) => read_results.push(v.map(Into::into)),
+                            Err(_) => read_results.push(None),
+                        },
                     }
                 }
                 ExecutionStatus::Success(MockOutput {
                     writes: behavior.writes.clone(),
                     deltas: behavior.deltas.clone(),
                     events: behavior.events.to_vec(),
-                    read_results: reads_result,
+                    read_results,
                     materialized_delta_writes: OnceCell::new(),
                     total_gas: behavior.gas,
                 })
@@ -549,6 +558,16 @@ where
             MockTransaction::SkipRest => ExecutionStatus::SkipRest(MockOutput::skip_output()),
             MockTransaction::Abort => ExecutionStatus::Abort(txn_idx as usize),
         }
+    }
+
+    fn convert_resource_group_write_to_value(
+        &self,
+        _view: &impl TExecutorView<K, MoveTypeLayout, ()>,
+        _key: &K,
+        _maybe_blob: Option<Bytes>,
+        _creation: bool,
+    ) -> anyhow::Result<V> {
+        unimplemented!("TODO: implement for AggregatorV2 testing");
     }
 }
 

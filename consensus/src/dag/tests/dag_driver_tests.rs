@@ -4,8 +4,9 @@ use crate::{
     dag::{
         anchor_election::RoundRobinAnchorElection,
         dag_driver::{DagDriver, DagDriverError},
-        dag_fetcher::DagFetcher,
+        dag_fetcher::DagFetcherService,
         dag_network::{RpcWithFallback, TDAGNetworkSender},
+        dag_state_sync::DAG_WINDOW,
         dag_store::Dag,
         order_rule::OrderRule,
         tests::{
@@ -21,7 +22,9 @@ use aptos_infallible::RwLock;
 use aptos_reliable_broadcast::{RBNetworkSender, ReliableBroadcast};
 use aptos_time_service::TimeService;
 use aptos_types::{
-    epoch_state::EpochState, ledger_info::LedgerInfo, validator_verifier::random_validator_verifier,
+    epoch_state::EpochState,
+    ledger_info::{generate_ledger_info_with_sig, LedgerInfo},
+    validator_verifier::random_validator_verifier,
 };
 use async_trait::async_trait;
 use claims::{assert_ok, assert_ok_eq};
@@ -57,7 +60,7 @@ impl TDAGNetworkSender for MockNetworkSender {
     /// Given a list of potential responders, sending rpc to get response from any of them and could
     /// fallback to more in case of failures.
     async fn send_rpc_with_fallbacks(
-        &self,
+        self: Arc<Self>,
         _responders: Vec<Author>,
         _message: DAGMessage,
         _retry_interval: Duration,
@@ -74,11 +77,15 @@ async fn test_certified_node_handler() {
         epoch: 1,
         verifier: validator_verifier,
     });
-    let storage = Arc::new(MockStorage::new());
+
+    let mock_ledger_info = LedgerInfo::mock_genesis(None);
+    let mock_ledger_info = generate_ledger_info_with_sig(&signers, mock_ledger_info);
+    let storage = Arc::new(MockStorage::new_with_ledger_info(mock_ledger_info));
     let dag = Arc::new(RwLock::new(Dag::new(
         epoch_state.clone(),
         storage.clone(),
-        1,
+        0,
+        DAG_WINDOW,
     )));
 
     let network_sender = Arc::new(MockNetworkSender {});
@@ -97,11 +104,11 @@ async fn test_certified_node_handler() {
         LedgerInfo::mock_genesis(None),
         dag.clone(),
         Box::new(RoundRobinAnchorElection::new(validators)),
-        Box::new(TestNotifier { tx }),
+        Arc::new(TestNotifier { tx }),
         storage.clone(),
     );
 
-    let (_, fetch_requester, _, _) = DagFetcher::new(
+    let (_, fetch_requester, _, _) = DagFetcherService::new(
         epoch_state.clone(),
         network_sender,
         dag.clone(),
